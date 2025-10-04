@@ -1,0 +1,99 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env
+.venv/
+env/
+ENV/
+
+# Flask / instance folder
+instance/
+*.db
+*.sqlite3
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+*.hypothesis/
+.pytest_cache/
+test-results/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Migrations
+migrations/versions/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*~
+.project
+.pydevproject
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# dotenv
+.env.local
+.env.development
+.env.production
+
+# Docker
+.docker/
+.dockerignore
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# Docker volumes and data
+volumes/
+*/volumes/*
+*.pid
+*.seed
+
+# Redis persistence
+dump.rdb
+appendonly.aof

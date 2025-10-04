@@ -1,0 +1,29 @@
+# Core
+flask
+flask_sqlalchemy
+flask_migrate
+flask_login
+flask_wtf
+email-validator
+
+# Security / hashing
+flask-bcrypt
+
+# Mail
+flask-mail
+
+# Celery stack
+celery[redis]
+redis
+
+# Dev / tests / deploy (optional but nice)
+python-dotenv
+gunicorn
+pytest
+pytest-flask
+faker
+factory-boy
+requests
+
+# Optional observability
+flower
