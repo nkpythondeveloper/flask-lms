@@ -1,0 +1,137 @@
+<!-- templates/partials/navbar.html -->
+<nav id="navbar"
+     class="bg-white border-b border-gray-200 sticky top-0 z-50 transition-all duration-300 ease-in-out">
+  <!-- Scroll Progress Bar -->
+  <div id="scrollProgress"
+       class="h-[2px] w-0 bg-gradient-to-r from-gray-400 via-indigo-500 to-violet-600 transition-all duration-150 ease-linear"></div>
+
+  <!-- Top bar -->
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex h-12 items-center justify-between">
+      <!-- Brand -->
+      <a href="{{ url_for('dashboard.index') }}" class="text-base font-semibold text-gray-800 hover:text-gray-900">
+        LibraryMS
+      </a>
+
+      <!-- Desktop nav -->
+      <div class="hidden md:flex items-center gap-5 text-sm">
+        <a href="{{ url_for('catalog.books_list') }}" class="text-gray-700 hover:text-gray-900">Catalog</a>
+        <a href="{{ url_for('circulation.issued_books') }}" class="text-gray-700 hover:text-gray-900">Circulation</a>
+
+        {% if current_user.is_authenticated and (current_user.is_librarian or current_user.is_admin) %}
+          <a href="{{ url_for('admin.users') }}" class="text-gray-700 hover:text-gray-900">Users</a>
+          <a href="{{ url_for('admin.settings') }}" class="text-gray-700 hover:text-gray-900">Settings</a>
+        {% endif %}
+
+        {% if current_user.is_authenticated %}
+          <span class="text-gray-400 text-xs select-none">|</span>
+          <span class="text-gray-600 text-xs">Hi, {{ current_user.first_name or 'User' }}</span>
+          <a href="{{ url_for('auth.logout') }}" class="text-gray-700 hover:text-gray-900">Logout</a>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="text-gray-700 hover:text-gray-900">Login</a>
+        {% endif %}
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button id="navToggle"
+              class="md:hidden inline-flex items-center justify-center rounded p-2 border border-gray-300 text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              aria-controls="mobileMenu" aria-expanded="false" aria-label="Toggle menu">
+        <svg id="iconOpen" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+        <svg id="iconClose" class="h-4 w-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile dropdown -->
+  <div id="mobileMenu"
+       class="md:hidden hidden border-t border-gray-200 bg-white transform transition-all duration-300 ease-in-out opacity-0 scale-y-95 origin-top"
+       role="region" aria-label="Mobile navigation">
+    <div class="px-4 py-3 text-sm space-y-1">
+      <a href="{{ url_for('catalog.books_list') }}" class="block px-2 py-2 rounded hover:bg-gray-100 text-gray-700">Catalog</a>
+      <a href="{{ url_for('circulation.issued_books') }}" class="block px-2 py-2 rounded hover:bg-gray-100 text-gray-700">Circulation</a>
+
+      {% if current_user.is_authenticated and (current_user.is_librarian or current_user.is_admin) %}
+        <a href="{{ url_for('admin.users') }}" class="block px-2 py-2 rounded hover:bg-gray-100 text-gray-700">Users</a>
+        <a href="{{ url_for('admin.settings') }}" class="block px-2 py-2 rounded hover:bg-gray-100 text-gray-700">Settings</a>
+      {% endif %}
+
+      <div class="border-t border-gray-200 my-2"></div>
+
+      {% if current_user.is_authenticated %}
+        <div class="px-2 py-1 text-xs text-gray-500">Signed in as</div>
+        <div class="px-2 py-1 text-xs text-gray-700 mb-2">{{ current_user.first_name or 'User' }}</div>
+        <a href="{{ url_for('auth.logout') }}" class="block px-2 py-2 rounded hover:bg-gray-100 text-gray-700">Logout</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="block px-2 py-2 rounded hover:bg-gray-100 text-gray-700">Login</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("navToggle");
+  const menu = document.getElementById("mobileMenu");
+  const iconOpen = document.getElementById("iconOpen");
+  const iconClose = document.getElementById("iconClose");
+  const navbar = document.getElementById("navbar");
+  const scrollProgress = document.getElementById("scrollProgress");
+
+  // Toggle mobile menu
+  function openMenu() {
+    menu.classList.remove("hidden", "opacity-0", "scale-y-95");
+    menu.classList.add("opacity-100", "scale-y-100");
+    btn.setAttribute("aria-expanded", "true");
+    iconOpen.classList.add("hidden");
+    iconClose.classList.remove("hidden");
+  }
+
+  function closeMenu() {
+    menu.classList.add("opacity-0", "scale-y-95");
+    setTimeout(() => menu.classList.add("hidden"), 200);
+    menu.classList.remove("opacity-100", "scale-y-100");
+    btn.setAttribute("aria-expanded", "false");
+    iconOpen.classList.remove("hidden");
+    iconClose.classList.add("hidden");
+  }
+
+  btn.addEventListener("click", () => {
+    const expanded = btn.getAttribute("aria-expanded") === "true";
+    expanded ? closeMenu() : openMenu();
+  });
+
+  document.addEventListener("click", (e) => {
+    const within = btn.contains(e.target) || menu.contains(e.target);
+    if (!within) closeMenu();
+  });
+
+  // Scroll shadow + progress + gradient shift
+  window.addEventListener("scroll", () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollPercent = (scrollTop / docHeight) * 100;
+
+    scrollProgress.style.width = `${scrollPercent}%`;
+
+    // Shadow effect on scroll
+    if (scrollTop > 8) {
+      navbar.classList.add("shadow-md");
+    } else {
+      navbar.classList.remove("shadow-md");
+    }
+
+    // Gradient hue shift based on scroll
+    const hue = 220 + (scrollPercent * 0.8); // range from indigo (220°) to violet (280°)
+    scrollProgress.style.background = `linear-gradient(to right, hsl(${hue - 60}, 40%, 65%), hsl(${hue}, 70%, 55%), hsl(${hue + 20}, 75%, 60%))`;
+  });
+});
+</script>

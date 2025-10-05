@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}My Library | LibraryMS{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-lg font-semibold text-gray-800">My Library</h1>
+  <p class="text-xs text-gray-500">Welcome, {{ current_user.first_name or 'Member' }}</p>
+</div>
+
+<!-- Active Borrowed Books -->
+<div class="border rounded-lg bg-white shadow-sm overflow-hidden mb-8">
+  <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+    <h2 class="text-sm font-medium text-gray-700">Currently Borrowed</h2>
+    <span class="text-xs text-gray-500">{{ borrowed_books|length }} books</span>
+  </div>
+
+  {% if borrowed_books %}
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left text-gray-600">
+      <thead class="bg-gray-100 text-xs uppercase text-gray-500">
+        <tr>
+          <th class="px-4 py-2">Title</th>
+          <th class="px-4 py-2">Author</th>
+          <th class="px-4 py-2">Issued On</th>
+          <th class="px-4 py-2">Due Date</th>
+          <th class="px-4 py-2">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for b in borrowed_books %}
+        <tr>
+          <td class="px-4 py-2 text-gray-800 font-medium">{{ b.book_title }}</td>
+          <td class="px-4 py-2">{{ b.book_author }}</td>
+          <td class="px-4 py-2">{{ b.issue_date.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-2">
+            {{ b.due_date.strftime('%d %b %Y') }}
+            {% if b.is_overdue %}
+              <span class="ml-2 text-xs text-red-600 font-semibold">(Overdue)</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-2">
+            {% if b.is_overdue %}
+              <span class="text-[10px] px-2 py-1 bg-red-100 text-red-700 rounded">Overdue</span>
+            {% else %}
+              <span class="text-[10px] px-2 py-1 bg-green-100 text-green-700 rounded">On Time</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-sm text-gray-500 px-4 py-6 text-center">You haven’t borrowed any books yet.</p>
+  {% endif %}
+</div>
+
+<!-- Borrowing History -->
+<div class="border rounded-lg bg-white shadow-sm overflow-hidden">
+  <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+    <h2 class="text-sm font-medium text-gray-700">Borrowing History</h2>
+    <a href="{{ url_for('circulation.return') }}" class="text-xs text-gray-500 hover:text-gray-700">View details</a>
+  </div>
+
+  {% if history %}
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left text-gray-600">
+      <thead class="bg-gray-100 text-xs uppercase text-gray-500">
+        <tr>
+          <th class="px-4 py-2">Title</th>
+          <th class="px-4 py-2">Author</th>
+          <th class="px-4 py-2">Issued On</th>
+          <th class="px-4 py-2">Returned On</th>
+          <th class="px-4 py-2">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for h in history %}
+        <tr>
+          <td class="px-4 py-2 font-medium text-gray-800">{{ h.book_title }}</td>
+          <td class="px-4 py-2">{{ h.book_author }}</td>
+          <td class="px-4 py-2">{{ h.issue_date.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-2">{{ h.return_date.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-2">
+            {% if h.is_late %}
+              <span class="text-[10px] px-2 py-1 bg-yellow-100 text-yellow-700 rounded">Returned Late</span>
+            {% else %}
+              <span class="text-[10px] px-2 py-1 bg-gray-200 text-gray-700 rounded">Returned</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-sm text-gray-500 px-4 py-6 text-center">No borrowing history yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

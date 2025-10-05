@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}My Reservations | LibraryMS{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-lg font-semibold text-gray-800">My Reservations</h1>
+  <p class="text-xs text-gray-500">Welcome, {{ current_user.first_name or 'Member' }}</p>
+</div>
+
+<!-- Info banner (optional) -->
+{% if ready_count and ready_count > 0 %}
+<div class="mb-4 bg-gray-50 border border-gray-200 text-gray-800 rounded-md p-3 shadow-sm">
+  <div class="text-sm">
+    ✅ You have <span class="font-medium">{{ ready_count }}</span> reservation{{ '' if ready_count == 1 else 's' }} <span class="font-medium">ready for pickup</span>.
+  </div>
+</div>
+{% endif %}
+
+<!-- Active Reservations -->
+<div class="border rounded-lg bg-white shadow-sm overflow-hidden mb-8">
+  <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+    <h2 class="text-sm font-medium text-gray-700">Active Reservations</h2>
+    <span class="text-xs text-gray-500">{{ active|length }} item{{ '' if (active|length == 1) else 's' }}</span>
+  </div>
+
+  {% if active %}
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left">
+      <thead class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-2">Title</th>
+          <th class="px-4 py-2">Placed On</th>
+          <th class="px-4 py-2">Status</th>
+          <th class="px-4 py-2">Pickup By</th>
+          <th class="px-4 py-2 text-right">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for r in active %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-medium text-gray-800">
+            <a href="{{ url_for('catalog.book_detail', book_id=r.book.id) }}" class="hover:underline">
+              {{ r.book.title }}
+            </a>
+          </td>
+          <td class="px-4 py-2 text-gray-600">{{ r.created_at.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-2">
+            {% if r.status == 'ready' %}
+              <span class="text-[10px] px-2 py-1 rounded bg-green-100 text-green-700">Ready</span>
+            {% elif r.status == 'pending' %}
+              <span class="text-[10px] px-2 py-1 rounded bg-yellow-100 text-yellow-700">Pending</span>
+            {% else %}
+              <span class="text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-700">{{ r.status|capitalize }}</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-2 text-gray-600">
+            {% if r.pickup_by %}{{ r.pickup_by.strftime('%d %b %Y') }}{% else %}-{% endif %}
+          </td>
+          <td class="px-4 py-2">
+            <div class="flex items-center gap-2 justify-end">
+              {% if r.status == 'pending' %}
+              <form method="post" action="{{ url_for('circulation.reservation_cancel', reservation_id=r.id) }}" class="inline">
+                {{ csrf_token() if csrf_token }}
+                <button class="px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-100"
+                        onclick="return confirm('Cancel this reservation?');">
+                  Cancel
+                </button>
+              </form>
+              {% elif r.status == 'ready' %}
+              <span class="text-[10px] text-gray-500">Pick up at the desk</span>
+              {% else %}
+              <span class="text-[10px] text-gray-400">—</span>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-sm text-gray-500 px-4 py-6 text-center">No active reservations.</p>
+  {% endif %}
+</div>
+
+<!-- Past Reservations -->
+<div class="border rounded-lg bg-white shadow-sm overflow-hidden">
+  <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+    <h2 class="text-sm font-medium text-gray-700">Past Reservations</h2>
+    <span class="text-xs text-gray-500">{{ total_past }} record{{ '' if total_past == 1 else 's' }}</span>
+  </div>
+
+  {% if past %}
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left">
+      <thead class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-2">Title</th>
+          <th class="px-4 py-2">Placed On</th>
+          <th class="px-4 py-2">Resolved On</th>
+          <th class="px-4 py-2">Outcome</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for r in past %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-medium text-gray-800">
+            <a href="{{ url_for('catalog.book_detail', book_id=r.book.id) }}" class="hover:underline">
+              {{ r.book.title }}
+            </a>
+          </td>
+          <td class="px-4 py-2 text-gray-600">{{ r.created_at.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-2 text-gray-600">
+            {% if r.resolved_at %}{{ r.resolved_at.strftime('%d %b %Y') }}{% else %}-{% endif %}
+          </td>
+          <td class="px-4 py-2">
+            {% if r.status == 'fulfilled' %}
+              <span class="text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-700">Fulfilled</span>
+            {% elif r.status == 'cancelled' %}
+              <span class="text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-700">Cancelled</span>
+            {% else %}
+              <span class="text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-700">{{ r.status|capitalize }}</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if pagination %}
+  <div class="px-4 py-3 border-t flex items-center justify-between text-xs">
+    <span class="text-gray-500">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    <div class="flex gap-2">
+      {% if pagination.has_prev %}
+        <a href="{{ url_for('circulation.member_reservations', page=pagination.prev_num) }}"
+           class="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-100">‹ Prev</a>
+      {% else %}
+        <span class="px-3 py-1.5 border border-gray-200 rounded text-gray-400">‹ Prev</span>
+      {% endif %}
+      {% if pagination.has_next %}
+        <a href="{{ url_for('circulation.member_reservations', page=pagination.next_num) }}"
+           class="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-100">Next ›</a>
+      {% else %}
+        <span class="px-3 py-1.5 border border-gray-200 rounded text-gray-400">Next ›</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+    <p class="text-sm text-gray-500 px-4 py-6 text-center">No past reservations.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

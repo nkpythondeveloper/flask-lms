@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  {% block meta %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% endblock %}
+
+  <title>{% block title %}LMS{% endblock %}</title>
+
+  <!-- Tailwind (local build) -->
+  <link href="{{ url_for('static', filename='dist/output.css') }}" rel="stylesheet">
+
+  <!-- Poppins (neutral typographic feel) -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { --font-ui: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    html, body { font-family: var(--font-ui); font-size: 14px; }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 text-gray-700 antialiased">
+  <!-- Top navbar -->
+  <header class="fixed inset-x-0 top-0 z-40 bg-white border-b shadow-sm">
+    <div class="max-w-7xl mx-auto h-14 px-4 sm:px-6 flex items-center justify-between">
+      <!-- brand + primary nav -->
+      <div class="flex items-center gap-6">
+        <a href="{{ url_for('core.index') }}" class="text-gray-900 font-semibold text-base">📚 LibraryMS</a>
+
+        <!-- desktop nav -->
+        <nav class="hidden md:flex items-center gap-5 text-sm">
+          <a href="{{ url_for('core.index') }}"
+             class="text-gray-600 hover:text-gray-900 {% if request.endpoint == 'core.index' %}font-medium text-gray-900{% endif %}">
+            Dashboard
+          </a>
+          <a href="{{ url_for('catalog.books') }}"
+             class="text-gray-600 hover:text-gray-900 {% if request.endpoint and request.endpoint.startswith('catalog.') %}font-medium text-gray-900{% endif %}">
+            Catalog
+          </a>
+          <a href="{{ url_for('circulation.issue') }}"
+             class="text-gray-600 hover:text-gray-900 {% if request.endpoint and request.endpoint.startswith('circulation.') %}font-medium text-gray-900{% endif %}">
+            Circulation
+          </a>
+          {% if current_user.is_authenticated and current_user.is_admin %}
+          <a href="{{ url_for('admin.users') }}"
+             class="text-gray-600 hover:text-gray-900 {% if request.endpoint and request.endpoint.startswith('admin.') %}font-medium text-gray-900{% endif %}">
+            Admin
+          </a>
+          {% endif %}
+        </nav>
+      </div>
+
+      <!-- session / mobile toggle -->
+      <div class="flex items-center gap-3">
+        {% if current_user.is_authenticated %}
+          <span class="hidden sm:inline text-xs text-gray-500">Hello, {{ current_user.first_name or 'User' }}</span>
+          <form method="post" action="{{ url_for('auth.logout') }}" class="hidden md:block">
+            {{ csrf_token() if csrf_token }}
+            <button class="px-3 py-1.5 rounded bg-gray-900 text-white text-xs hover:bg-gray-800">
+              Logout
+            </button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="hidden md:inline-block px-3 py-1.5 rounded bg-gray-900 text-white text-xs hover:bg-gray-800">
+            Login
+          </a>
+        {% endif %}
+
+        <!-- mobile menu button -->
+        <button id="navToggle" class="md:hidden inline-flex items-center justify-center w-9 h-9 rounded border border-gray-200 hover:bg-gray-100"
+                aria-label="Toggle navigation">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- mobile nav -->
+    <div id="mobileNav" class="md:hidden hidden border-t">
+      <nav class="max-w-7xl mx-auto px-4 py-2 text-sm">
+        <a href="{{ url_for('core.index') }}" class="block px-2 py-2 rounded hover:bg-gray-100">Dashboard</a>
+        <a href="{{ url_for('catalog.books') }}" class="block px-2 py-2 rounded hover:bg-gray-100">Catalog</a>
+        <a href="{{ url_for('circulation.issue') }}" class="block px-2 py-2 rounded hover:bg-gray-100">Circulation</a>
+        {% if current_user.is_authenticated and current_user.is_admin %}
+        <a href="{{ url_for('admin.users') }}" class="block px-2 py-2 rounded hover:bg-gray-100">Admin</a>
+        {% endif %}
+        <div class="mt-2 border-t pt-2">
+          {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('auth.logout') }}">
+              {{ csrf_token() if csrf_token }}
+              <button class="w-full text-left px-2 py-2 rounded hover:bg-gray-100">Logout</button>
+            </form>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="block px-2 py-2 rounded hover:bg-gray-100">Login</a>
+          {% endif %}
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- main page container -->
+  <main class="pt-16">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+      <!-- flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="space-y-2 mb-4">
+            {% for category, msg in messages %}
+              <div class="px-3 py-2 rounded border text-xs
+                          {% if category == 'success' %}bg-green-50 border-green-200 text-green-700
+                          {% elif category in ['danger','error'] %}bg-red-50 border-red-200 text-red-700
+                          {% else %}bg-gray-50 border-gray-200 text-gray-700{% endif %}">
+                {{ msg }}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  {% block extra_js %}{% endblock %}
+
+  <script>
+    // tiny mobile nav toggle (no external libs)
+    document.getElementById('navToggle')?.addEventListener('click', function () {
+      const m = document.getElementById('mobileNav');
+      if (m) m.classList.toggle('hidden');
+    });
+  </script>
+</body>
+</html>

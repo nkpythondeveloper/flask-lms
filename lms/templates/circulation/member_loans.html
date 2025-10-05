@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}My Loans | LibraryMS{% endblock %}
+{% block content %}
+
+<!-- Overdue banner -->
+{% if overdue_count and overdue_count > 0 %}
+<div class="mb-4 bg-red-50 border border-red-200 text-red-800 rounded-md p-3 flex items-center justify-between shadow-sm">
+  <div class="text-sm font-medium">
+    ⚠️ You have {{ overdue_count }} overdue book{{ '' if overdue_count == 1 else 's' }}. Please return them as soon as possible.
+  </div>
+  <a href="#activeLoans" class="text-xs underline text-red-700 hover:text-red-800">View Overdue</a>
+</div>
+{% endif %}
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-lg font-semibold text-gray-800">My Loans</h1>
+  <p class="text-xs text-gray-500">Welcome, {{ current_user.first_name or 'Member' }}</p>
+</div>
+
+<!-- Active Loans -->
+<div id="activeLoans" class="border rounded-lg bg-white shadow-sm overflow-hidden mb-8">
+  <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+    <h2 class="text-sm font-medium text-gray-700">Currently Borrowed</h2>
+    <span class="text-xs text-gray-500">{{ active|length }} book{{ '' if (active|length == 1) else 's' }}</span>
+  </div>
+
+  {% if active %}
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left">
+      <thead class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-2">Title</th>
+          <th class="px-4 py-2">Barcode</th>
+          <th class="px-4 py-2">Issued</th>
+          <th class="px-4 py-2">Due</th>
+          <th class="px-4 py-2">Status</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for loan in active %}
+        {% set is_overdue = loan.due_date and (loan.due_date < now_utc) %}
+        <tr class="hover:bg-gray-50 {% if is_overdue %}bg-red-50{% endif %}">
+          <td class="px-4 py-2 font-medium text-gray-800">
+            <a href="{{ url_for('catalog.book_detail', book_id=loan.copy.book.id) }}" class="hover:underline">
+              {{ loan.copy.book.title }}
+            </a>
+          </td>
+          <td class="px-4 py-2 text-gray-600">{{ loan.copy.barcode }}</td>
+          <td class="px-4 py-2 text-gray-600">{{ loan.issued_at.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-2 text-gray-600">
+            {{ loan.due_date.strftime('%d %b %Y') if loan.due_date else '-' }}
+          </td>
+          <td class="px-4 py-2">
+            {% if is_overdue %}
+              <span class="text-[10px] px-2 py-1 rounded bg-red-100 text-red-700">Overdue</span>
+            {% else %}
+              <span class="text-[10px] px-2 py-1 rounded bg-green-100 text-green-700">On Time</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-sm text-gray-500 px-4 py-6 text-center">You don’t have any active loans.</p>
+  {% endif %}
+</div>
+
+<!-- History -->
+<div class="border rounded-lg bg-white shadow-sm overflow-hidden">
+  <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+    <h2 class="text-sm font-medium text-gray-700">Borrowing History</h2>
+    <span class="text-xs text-gray-500">{{ total_history }} record{{ '' if total_history == 1 else 's' }}</span>
+  </div>
+
+  {% if history %}
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm text-left">
+      <thead class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-2">Title</th>
+          <th class="px-4 py-2">Barcode</th>
+          <th class="px-4 py-2">Issued</th>
+          <th class="px-4 py-2">Returned</th>
+          <th class="px-4 py-2">Status</th>
+          <th class="px-4 py-2">Fine</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for loan in history %}
+        {% set was_late = loan.due_date and loan.returned_at and (loan.returned_at > loan.due_date) %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-medium text-gray-800">
+            <a href="{{ url_for('catalog.book_detail', book_id=loan.copy.book.id) }}" class="hover:underline">
+              {{ loan.copy.book.title }}
+            </a>
+          </td>
+          <td class="px-4 py-2 text-gray-600">{{ loan.copy.barcode }}</td>
+          <td class="px-4 py-2 text-gray-600">{{ loan.issued_at.strftime('%d %b %Y') }}</td>
+          <td class="px-4 py-2 text-gray-600">{{ loan.returned_at.strftime('%d %b %Y') if loan.returned_at else '-' }}</td>
+          <td class="px-4 py-2">
+            {% if was_late %}
+              <span class="text-[10px] px-2 py-1 rounded bg-yellow-100 text-yellow-700">Returned Late</span>
+            {% else %}
+              <span class="text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-700">Returned</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-2 text-gray-700">
+            {% if loan.fine and loan.fine > 0 %}
+              ₹{{ '{:.2f}'.format(loan.fine) }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pagination %}
+  <div class="px-4 py-3 border-t flex items-center justify-between text-xs">
+    <span class="text-gray-500">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+    <div class="flex gap-2">
+      {% if pagination.has_prev %}
+        <a href="{{ url_for('circulation.member_loans', page=pagination.prev_num) }}"
+           class="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-100">‹ Prev</a>
+      {% else %}
+        <span class="px-3 py-1.5 border border-gray-200 rounded text-gray-400">‹ Prev</span>
+      {% endif %}
+      {% if pagination.has_next %}
+        <a href="{{ url_for('circulation.member_loans', page=pagination.next_num) }}"
+           class="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-100">Next ›</a>
+      {% else %}
+        <span class="px-3 py-1.5 border border-gray-200 rounded text-gray-400">Next ›</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+    <p class="text-sm text-gray-500 px-4 py-6 text-center">No past loans yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

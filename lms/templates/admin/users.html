@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}Users | LibraryMS{% endblock %}
+{% block content %}
+
+<!-- Page header -->
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-lg font-semibold text-gray-800">User Management</h1>
+  {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_librarian) %}
+  <button id="openAddUser"
+          class="px-3 py-1.5 bg-gray-900 text-white text-xs rounded hover:bg-gray-800">
+    + Add User
+  </button>
+  {% endif %}
+</div>
+
+<!-- Search -->
+<form method="get" class="border rounded-lg bg-white shadow-sm p-4 mb-6">
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+    <div class="md:col-span-3">
+      <label class="block text-xs font-medium text-gray-600 mb-1">Search</label>
+      <input type="text" name="q" value="{{ request.args.get('q','') }}"
+             placeholder="Search name or email…"
+             class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800">
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Role</label>
+      <select name="role" class="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700">
+        <option value="">All</option>
+        <option value="member" {% if request.args.get('role')=='member' %}selected{% endif %}>Member</option>
+        <option value="librarian" {% if request.args.get('role')=='librarian' %}selected{% endif %}>Librarian</option>
+        <option value="admin" {% if request.args.get('role')=='admin' %}selected{% endif %}>Admin</option>
+      </select>
+    </div>
+  </div>
+  <div class="mt-3 flex items-center justify-between">
+    <div class="text-xs text-gray-500">
+      {% if total_count is defined %} Showing {{ users|length }} of {{ total_count }} {% endif %}
+    </div>
+    <div class="flex gap-2">
+      <a href="{{ url_for('admin.users') }}"
+         class="px-3 py-1.5 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-100">Reset</a>
+      <button class="px-3 py-1.5 bg-gray-900 text-white text-xs rounded hover:bg-gray-800">Search</button>
+    </div>
+  </div>
+</form>
+
+<!-- Users table -->
+<div class="border rounded-lg bg-white shadow-sm overflow-x-auto">
+  <table class="min-w-full text-sm text-left">
+    <thead class="bg-gray-100 text-gray-600 text-xs uppercase tracking-wide">
+      <tr>
+        <th class="px-4 py-2">Name</th>
+        <th class="px-4 py-2">Email</th>
+        <th class="px-4 py-2">Role</th>
+        <th class="px-4 py-2">Status</th>
+        <th class="px-4 py-2 text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% if users %}
+        {% for u in users %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-2 font-medium text-gray-800">
+            {{ (u.first_name ~ ' ' ~ u.last_name).strip() }}
+          </td>
+          <td class="px-4 py-2 text-gray-600">{{ u.email }}</td>
+          <td class="px-4 py-2 capitalize">{{ u.role }}</td>
+          <td class="px-4 py-2">
+            {% if u.is_active %}
+              <span class="text-[10px] px-2 py-1 rounded bg-green-100 text-green-700">Active</span>
+            {% else %}
+              <span class="text-[10px] px-2 py-1 rounded bg-gray-200 text-gray-700">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-2">
+            <div class="flex items-center gap-2 justify-end">
+              {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_librarian) %}
+                <button type="button"
+                        class="px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-100 openEditUser"
+                        data-id="{{ u.id }}">
+                  Edit
+                </button>
+                {% if current_user.is_admin %}
+                <form method="post" action="{{ url_for('admin.user_toggle', user_id=u.id) }}" class="inline">
+                  {{ csrf_token() if csrf_token }}
+                  <button type="submit"
+                          class="px-2 py-1 border border-gray-300 rounded text-xs text-gray-700 hover:bg-gray-100"
+                          onclick="return confirm('Toggle this user\'s active state?');">
+                    {{ 'Disable' if u.is_active else 'Enable' }}
+                  </button>
+                </form>
+                {% endif %}
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="5" class="px-4 py-8 text-center text-sm text-gray-500">No users found.</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+{% if pagination %}
+  <div class="mt-4 flex items-center justify-between text-xs">
+    <div class="text-gray-500">Page {{ pagination.page }} of {{ pagination.pages }}</div>
+    <div class="flex gap-2">
+      {% if pagination.has_prev %}
+        <a class="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-100"
+           href="{{ url_for('admin.users', page=pagination.prev_num, q=request.args.get('q',''), role=request.args.get('role','')) }}">‹ Prev</a>
+      {% else %}
+        <span class="px-3 py-1.5 border border-gray-200 rounded text-gray-400 cursor-not-allowed">‹ Prev</span>
+      {% endif %}
+      {% if pagination.has_next %}
+        <a class="px-3 py-1.5 border border-gray-300 rounded hover:bg-gray-100"
+           href="{{ url_for('admin.users', page=pagination.next_num, q=request.args.get('q',''), role=request.args.get('role','')) }}">Next ›</a>
+      {% else %}
+        <span class="px-3 py-1.5 border border-gray-200 rounded text-gray-400 cursor-not-allowed">Next ›</span>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+
+{% if current_user.is_authenticated and (current_user.is_admin or current_user.is_librarian) %}
+<!-- =========================
+     ADD USER MODAL
+========================= -->
+<div id="addUserModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4 overflow-hidden">
+    <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+      <h2 class="text-sm font-medium text-gray-700">Add New User</h2>
+      <button class="text-gray-500 hover:text-gray-700 modal-close">✕</button>
+    </div>
+    <form method="post" action="{{ url_for('admin.user_create') }}" class="p-4 space-y-3">
+      {{ csrf_token() if csrf_token }}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">First Name</label>
+          <input name="first_name" placeholder="First name"
+                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Last Name</label>
+          <input name="last_name" placeholder="Last name"
+                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Email</label>
+        <input type="email" name="email" placeholder="user@domain.com"
+               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800">
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Role</label>
+          <select name="role" class="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700">
+            <option value="member">Member</option>
+            <option value="librarian">Librarian</option>
+            {% if current_user.is_admin %}<option value="admin">Admin</option>{% endif %}
+          </select>
+        </div>
+        <div class="flex items-center mt-5 md:mt-0">
+          <input id="is_active_add" name="is_active" type="checkbox" class="mr-2">
+          <label for="is_active_add" class="text-xs text-gray-700">Active</label>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Temporary Password</label>
+        <input name="temp_password" type="text" placeholder="(Optional) Temp password"
+               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800">
+        <p class="text-[11px] text-gray-500 mt-1">If omitted, one will be auto-generated.</p>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button type="button" class="px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-700 hover:bg-gray-100 modal-close">Cancel</button>
+        <button class="px-3 py-1.5 text-xs bg-gray-900 text-white rounded hover:bg-gray-800">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =========================
+     EDIT USER MODAL (AJAX)
+========================= -->
+<div id="editUserModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4 overflow-hidden">
+    <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+      <h2 class="text-sm font-medium text-gray-700">Edit User</h2>
+      <button class="text-gray-500 hover:text-gray-700 modal-close">✕</button>
+    </div>
+    <form id="editUserForm" method="post" class="p-4 space-y-3">
+      {{ csrf_token() if csrf_token }}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">First Name</label>
+          <input id="eu_first" name="first_name"
+                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Last Name</label>
+          <input id="eu_last" name="last_name"
+                 class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Email</label>
+        <input id="eu_email" name="email" type="email"
+               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800">
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Role</label>
+          <select id="eu_role" name="role" class="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700">
+            <option value="member">Member</option>
+            <option value="librarian">Librarian</option>
+            {% if current_user.is_admin %}<option value="admin">Admin</option>{% endif %}
+          </select>
+        </div>
+        <div class="flex items-center mt-5 md:mt-0">
+          <input id="eu_active" name="is_active" type="checkbox" class="mr-2">
+          <label for="eu_active" class="text-xs text-gray-700">Active</label>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button type="button" class="px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-700 hover:bg-gray-100 modal-close">Cancel</button>
+        <button class="px-3 py-1.5 text-xs bg-gray-900 text-white rounded hover:bg-gray-800">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Scripts -->
+<script>
+  function open(el){ el?.classList.remove('hidden'); el?.classList.add('flex'); }
+  function close(el){ el?.classList.add('hidden'); el?.classList.remove('flex'); }
+
+  const addUserModal = document.getElementById('addUserModal');
+  const editUserModal = document.getElementById('editUserModal');
+  const openAddBtn = document.getElementById('openAddUser');
+
+  // Open Add modal
+  openAddBtn?.addEventListener('click', () => open(addUserModal));
+
+  // Close modals
+  document.querySelectorAll('.modal-close').forEach(x => {
+    x.addEventListener('click', () => close(x.closest('#addUserModal, #editUserModal')));
+  });
+  [addUserModal, editUserModal].forEach(m => m?.addEventListener('click', e => { if (e.target === m) close(m); }));
+
+  // Edit modal (AJAX prefill)
+  const eu_first = document.getElementById('eu_first');
+  const eu_last  = document.getElementById('eu_last');
+  const eu_email = document.getElementById('eu_email');
+  const eu_role  = document.getElementById('eu_role');
+  const eu_active= document.getElementById('eu_active');
+  const editUserForm = document.getElementById('editUserForm');
+
+  document.querySelectorAll('.openEditUser').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      try {
+        const res = await fetch(`/admin/users/${id}/json`, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('Failed to load user');
+        const u = await res.json();
+
+        eu_first.value = u.first_name || '';
+        eu_last.value  = u.last_name || '';
+        eu_email.value = u.email || '';
+        eu_role.value  = u.role || 'member';
+        eu_active.checked = !!u.is_active;
+
+        editUserForm.action = `/admin/users/${id}/update`;
+        open(editUserModal);
+      } catch (e) {
+        alert('Could not load user details.');
+        console.error(e);
+      }
+    });
+  });
+</script>
+
+{% endblock %}

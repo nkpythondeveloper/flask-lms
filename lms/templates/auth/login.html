@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Login | LibraryMS{% endblock %}
+{% block content %}
+
+<div class="grid grid-cols-1 md:grid-cols-2 border rounded-lg shadow-sm bg-white overflow-hidden">
+  <!-- Left panel (illustration) -->
+  <div class="hidden md:flex items-center justify-center bg-gray-100">
+    <img src="{{ url_for('static', filename='images/library_vector.svg') }}" alt="Library illustration"
+         class="w-3/4 max-w-sm opacity-90">
+  </div>
+
+  <!-- Right panel (form) -->
+  <div class="p-8 md:p-10 flex flex-col justify-center">
+    <h1 class="text-lg font-semibold text-gray-800 mb-2">Welcome back 👋</h1>
+    <p class="text-sm text-gray-500 mb-6">Sign in to your account to manage books and circulation.</p>
+
+    <form method="post" class="space-y-4">
+      {{ form.hidden_tag() }}
+      
+      <div>
+        <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        {{ form.email(class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800", placeholder="you@example.com") }}
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        {{ form.password(class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800", placeholder="••••••••") }}
+      </div>
+
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          {{ form.remember(class="h-3 w-3 text-gray-900") }}
+          <label for="remember" class="text-xs text-gray-600">Remember me</label>
+        </div>
+        <a href="#" class="text-xs text-gray-500 hover:text-gray-700">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="w-full py-2 text-sm font-medium bg-gray-900 text-white rounded hover:bg-gray-800">
+        Sign in
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

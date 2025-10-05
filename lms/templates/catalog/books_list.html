@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Catalog | LibraryMS{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-lg font-semibold text-gray-800">Books Catalog</h1>
+  {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_librarian) %}
+  <button id="openAddModal"
+          class="px-3 py-1.5 bg-gray-900 text-white text-xs rounded hover:bg-gray-800">
+    + Add Book
+  </button>
+  {% endif %}
+</div>
+
+{% if current_user.is_authenticated and (current_user.is_admin or current_user.is_librarian) %}
+<!-- ========== ADD MODAL ========== -->
+<div id="addModal"
+     class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4 overflow-hidden">
+    <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+      <h2 class="text-sm font-medium text-gray-700">Add New Book</h2>
+      <button class="text-gray-500 hover:text-gray-700 modal-close">✕</button>
+    </div>
+
+    <form method="post" action="{{ url_for('catalog.book_create') }}" class="p-4 space-y-3">
+      {{ form.hidden_tag() }}
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Title</label>
+        {{ form.title(class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800", placeholder="Book title") }}
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Author</label>
+        {{ form.author(class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800", placeholder="Author name") }}
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">ISBN</label>
+        {{ form.isbn(class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800", placeholder="ISBN number") }}
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Category</label>
+        {{ form.category(class="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700") }}
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Total Copies</label>
+        {{ form.total_copies(class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800", placeholder="Number of copies") }}
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button type="button"
+                class="px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-700 hover:bg-gray-100 modal-close">Cancel</button>
+        <button type="submit"
+                class="px-3 py-1.5 text-xs bg-gray-900 text-white rounded hover:bg-gray-800">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ========== EDIT MODAL (AJAX LOADED) ========== -->
+<div id="editModal"
+     class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-lg mx-4 overflow-hidden">
+    <div class="flex items-center justify-between border-b px-4 py-3 bg-gray-50">
+      <h2 class="text-sm font-medium text-gray-700">Edit Book</h2>
+      <button class="text-gray-500 hover:text-gray-700 modal-close">✕</button>
+    </div>
+
+    <form id="editForm" method="post" class="p-4 space-y-3">
+      {{ form.hidden_tag() }}
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Title</label>
+        <input id="edit_title" name="title" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Author</label>
+        <input id="edit_author" name="author" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">ISBN</label>
+        <input id="edit_isbn" name="isbn" class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Category</label>
+        <select id="edit_category" name="category"
+                class="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700">
+          {% for c in categories or [] %}
+          <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-600 mb-1">Total Copies</label>
+        <input id="edit_total_copies" name="total_copies" type="number" min="0"
+               class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-gray-800" />
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t">
+        <button type="button"
+                class="px-3 py-1.5 text-xs border border-gray-300 rounded text-gray-700 hover:bg-gray-100 modal-close">Cancel</button>
+        <button type="submit"
+                class="px-3 py-1.5 text-xs bg-gray-900 text-white rounded hover:bg-gray-800">Update</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<!-- Search and table omitted for brevity (use your existing table block) -->
+
+<!-- ========== JS ========== -->
+<script>
+  function open(el){ el.classList.remove('hidden'); el.classList.add('flex'); }
+  function close(el){ el.classList.add('hidden'); el.classList.remove('flex'); }
+
+  const addModal = document.getElementById('addModal');
+  const editModal = document.getElementById('editModal');
+  const editForm = document.getElementById('editForm');
+
+  const editTitle = document.getElementById('edit_title');
+  const editAuthor = document.getElementById('edit_author');
+  const editIsbn = document.getElementById('edit_isbn');
+  const editCategory = document.getElementById('edit_category');
+  const editTotalCopies = document.getElementById('edit_total_copies');
+
+  // Add Modal
+  document.getElementById('openAddModal')?.addEventListener('click', () => open(addModal));
+
+  // Edit Modal (AJAX)
+  document.querySelectorAll('.openEdit').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      try {
+        const res = await fetch(`/catalog/book/${id}/json`, { credentials: 'same-origin' });
+        if (!res.ok) throw new Error('Network error');
+        const book = await res.json();
+
+        editTitle.value = book.title || '';
+        editAuthor.value = book.author || '';
+        editIsbn.value = book.isbn || '';
+        editTotalCopies.value = book.total_copies ?? '';
+        if (book.category_id) editCategory.value = String(book.category_id);
+
+        editForm.action = `/catalog/book/${id}/update`;
+        open(editModal);
+      } catch (err) {
+        alert('Failed to load book details.');
+        console.error(err);
+      }
+    });
+  });
+
+  // Close handlers
+  document.querySelectorAll('.modal-close').forEach(x => {
+    x.addEventListener('click', () => close(x.closest('#addModal, #editModal')));
+  });
+  [addModal, editModal].forEach(m => {
+    m?.addEventListener('click', e => { if (e.target === m) close(m); });
+  });
+</script>
+
+{% endblock %}
