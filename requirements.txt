@@ -12,6 +12,9 @@ flask-bcrypt
 # Mail
 flask-mail
 
+# Rate Limiting
+flask-limiter
+
 # Celery stack
 celery[redis]
 redis

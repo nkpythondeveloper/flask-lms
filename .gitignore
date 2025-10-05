@@ -1,4 +1,13 @@
+# Node & Tailwind
+node_modules/
+package-lock.json
+npm-debug.log*
+dist/
+lms/static/src/input.css
+!lms/static/dist/output.css
+
 # Byte-compiled / optimized / DLL files
+*.log
 __pycache__/
 *.py[cod]
 *$py.class
